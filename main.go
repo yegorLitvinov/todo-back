@@ -213,7 +213,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	store.Options(sessions.Options{MaxAge: 60 * 60 * 1})
+	store.Options(sessions.Options{MaxAge: 60 * 60 * 1, Path: "/"})
 
 	// Routes/Middleware
 	router := gin.Default()
