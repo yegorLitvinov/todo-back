@@ -1,5 +1,0 @@
-github.com/lib/pq
-github.com/jinzhu/gorm
-github.com/gin-gonic/gin
-github.com/gin-contrib/sessions
-github.com/gin-contrib/sessions/redis

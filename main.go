@@ -197,9 +197,13 @@ func authRequiredMiddleware(c *gin.Context) {
 func main() {
 	var err error
 	// DB
+	dbHost := "localhost"
+	if gin.Mode() == gin.ReleaseMode {
+		dbHost = "postgres"
+	}
 	db, err = gorm.Open(
 		"postgres",
-		"host=localhost port=5432 user=todo dbname=todo password=password sslmode=disable",
+		fmt.Sprintf("host=%s port=5432 user=todo dbname=todo password=password sslmode=disable", dbHost),
 	)
 	if err != nil {
 		panic(err)
@@ -209,7 +213,11 @@ func main() {
 
 	// Session
 	var store redis.Store
-	store, err = redis.NewStore(10, "tcp", "localhost:6379", "", []byte("LFoNBWW394@#$#d"))
+	redisHost := "localhost"
+	if gin.Mode() == gin.ReleaseMode {
+		redisHost = "redis"
+	}
+	store, err = redis.NewStore(10, "tcp", fmt.Sprintf("%s:6379", redisHost), "", []byte("LFoNBWW394@#$#d"))
 	if err != nil {
 		panic(err)
 	}

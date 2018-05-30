@@ -1,0 +1,32 @@
+version: "3"
+
+services:
+  todo:
+    image: yegorlitvinov/todo:latest
+    networks:
+      todoNetwork:
+        ipv4_address: 172.32.111.2
+    restart: "on-failure"
+    depends_on:
+      - postgres
+      - redis
+      
+  postgres:
+    image: postgres:alpine
+    networks:
+      todoNetwork:
+        ipv4_address: 172.32.111.3
+
+  redis:
+    image: redis:alpine
+    networks:
+      todoNetwork:
+        ipv4_address: 172.32.111.4
+  
+networks:
+  todoNetwork:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.32.111.0/24
