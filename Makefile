@@ -8,16 +8,16 @@ run:
 build:
 	docker build --tag yegorlitvinov/todo-back:latest .
 
-SERVER=root@195.201.27.44
+SERVER=todo@195.201.27.44
+ROOT_SERVER=root@195.201.27.44
 HOME=/home/todo
 deploy-app:
-	# ssh $(SERVER) 'mkdir -p $(HOME)/volume'
 	scp docker-compose.yml $(SERVER):$(HOME)
 	ssh $(SERVER) 'cd $(HOME) && docker-compose pull && docker-compose up -d'
 
 deploy-nginx:
-	scp todo_nginx.conf $(SERVER):/etc/nginx/sites-enabled/
-	ssh $(SERVER) 'nginx -t'
-	ssh $(SERVER) 'service nginx restart'
+	scp todo_nginx.conf $(ROOT_SERVER):/etc/nginx/sites-enabled/
+	ssh $(ROOT_SERVER) 'nginx -t'
+	ssh $(ROOT_SERVER) 'service nginx restart'
 	# certbot certonly -d *.tvgun.ga --server https://acme-v02.api.letsencrypt.org/directory --manual
 	# certbot renew

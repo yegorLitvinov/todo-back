@@ -18,7 +18,17 @@ pipeline:
     when:
       branch: master
       status: success
-      
+  deploy:
+    image: appleboy/drone-ssh
+    host: 195.201.27.44
+    username: todo
+    port: 22
+    secrets: [ ssh_password ]
+    script:
+      - git pull
+      - docker-compose pull
+      - docker-compose up -d
+
 services:
   postgres:
     image: postgres:alpine

@@ -13,6 +13,8 @@ services:
       
   postgres:
     image: postgres:alpine
+    volumes:
+      - .db:/var/lib/postgresql/data
     networks:
       todoNetwork:
         ipv4_address: 172.32.111.3
