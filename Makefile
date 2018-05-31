@@ -6,7 +6,7 @@ run:
 	gin --port 3500 --appPort 4000
 
 build:
-	docker build --tag yegorlitvinov/todo:latest .
+	docker build --tag yegorlitvinov/todo-back:latest .
 
 SERVER=root@195.201.27.44
 HOME=/home/todo

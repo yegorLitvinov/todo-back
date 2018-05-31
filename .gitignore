@@ -1,4 +1,4 @@
 /gin-bin
-/debug
+debug*
 /.vscode/
-/todo
+/todo-back

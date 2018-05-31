@@ -2,7 +2,7 @@ version: "3"
 
 services:
   todo:
-    image: yegorlitvinov/todo:latest
+    image: yegorlitvinov/todo-back:latest
     networks:
       todoNetwork:
         ipv4_address: 172.32.111.2

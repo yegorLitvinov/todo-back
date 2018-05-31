@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 )
@@ -99,4 +100,23 @@ func signup(c *gin.Context) {
 	}
 	setSessionUser(c, user.ID)
 	c.JSON(http.StatusCreated, gin.H{"Info": "The user successfully created"})
+}
+
+func SetupAPIRouter(store sessions.Store) *gin.Engine {
+	router := gin.Default()
+	sessionMiddleware := sessions.Sessions("x-session", store)
+	router.Use(sessionMiddleware)
+
+	apiGroup := router.Group("/api/v1/")
+	todoGroup := apiGroup.Group("/todos/", authRequiredMiddleware)
+	authGroup := apiGroup.Group("/auth/")
+
+	authGroup.POST("/login/", login)
+	authGroup.POST("/signup/", signup)
+	authGroup.POST("/logout/", authRequiredMiddleware, logout)
+
+	todoGroup.GET("/", listTodos)
+	todoGroup.POST("/", createTodo)
+	todoGroup.PUT("/:id/", updateTodo)
+	return router
 }

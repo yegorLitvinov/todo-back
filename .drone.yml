@@ -1,0 +1,30 @@
+workspace:
+  base: /go
+  path: src/yegorLitvinov/todo-back
+
+pipeline:
+  build:
+    image: golang:alpine
+    commands:
+      - apk --no-cache add git build-base
+      - go get -t ./...
+      - GIN_MODE=release go test ./...
+      - GOOS=linux go build -ldflags="-s -w"
+  docker:
+    image: plugins/docker
+    repo: yegorlitvinov/todo-back
+    secrets: [ docker_username, docker_password ]
+    tags: latest
+    when:
+      branch: master
+      status: success
+      
+services:
+  postgres:
+    image: postgres:alpine
+    environment:
+      - POSTGRES_USER=todo
+      - POSTGRES_DB=todo
+      - POSTGRES_PASSWORD=password
+  redis:
+    image: redis:alpine

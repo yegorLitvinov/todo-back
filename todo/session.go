@@ -2,9 +2,11 @@ package todo
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 )
@@ -58,4 +60,18 @@ func authRequiredMiddleware(c *gin.Context) {
 	}
 	c.Set("user", user)
 	c.Next()
+}
+
+func SetupSessionStore() sessions.Store {
+	var store redis.Store
+	redisHost := "localhost"
+	if gin.Mode() == gin.ReleaseMode {
+		redisHost = "redis"
+	}
+	store, err := redis.NewStore(10, "tcp", fmt.Sprintf("%s:6379", redisHost), "", []byte("LFoNBWW394@#$#d"))
+	if err != nil {
+		panic(err)
+	}
+	store.Options(sessions.Options{MaxAge: 60 * 60 * 1, Path: "/"})
+	return store
 }

@@ -1,6 +1,15 @@
 package todo
 
-import "time"
+import (
+	"fmt"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
+)
+
+var db *gorm.DB
 
 type User struct {
 	ID        uint      `gorm:"primary_key" json:"id"`
@@ -26,4 +35,20 @@ type Tag struct {
 	CreatedAt time.Time `gorm:"not null" json:"createdAt"`
 	Text      string    `gorm:"not null" json:"text"`
 	Todos     []Todo    `gorm:"foreignkey:Tag" json:"-"`
+}
+
+func SetupDB() {
+	dbHost := "localhost"
+	if gin.Mode() == gin.ReleaseMode {
+		dbHost = "postgres"
+	}
+	var err error
+	db, err = gorm.Open(
+		"postgres",
+		fmt.Sprintf("host=%s port=5432 user=todo dbname=todo password=password sslmode=disable", dbHost),
+	)
+	if err != nil {
+		panic(err)
+	}
+	db.AutoMigrate(&User{}, &Tag{}, &Todo{})
 }
