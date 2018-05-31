@@ -1,3 +1,5 @@
+branches: master
+
 workspace:
   base: /go
   path: src/yegorLitvinov/todo-back
@@ -16,8 +18,8 @@ pipeline:
     secrets: [ docker_username, docker_password ]
     tags: latest
     when:
-      branch: master
       status: success
+
   deploy:
     image: appleboy/drone-ssh
     host: 195.201.27.44
@@ -28,6 +30,8 @@ pipeline:
       - git pull
       - docker-compose pull
       - docker-compose up -d
+    when:
+      status: success
 
 services:
   postgres:
