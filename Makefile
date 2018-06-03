@@ -1,3 +1,5 @@
+.PHONY: backup
+
 resetdb:
 	psql -h localhost -U postgres -c "drop database todo"
 	psql -h localhost -U postgres -c "create database todo owner todo"
@@ -21,3 +23,13 @@ deploy-nginx:
 	ssh $(ROOT_SERVER) 'service nginx restart'
 	# certbot certonly -d *.tvgun.ga --server https://acme-v02.api.letsencrypt.org/directory --manual
 	# certbot renew
+
+BACKUP_FILE=backup/todo.dump
+backup:
+	mkdir -p backup
+	ssh $(SERVER) 'mkdir -p ./backup'
+	ssh $(SERVER) "docker-compose exec -T -u postgres postgres pg_dump -Fc todo > $(BACKUP_FILE)"
+	rsync -aP --delete -e ssh $(SERVER):$(BACKUP_FILE) `pwd`/$(BACKUP_FILE)
+
+restore:
+	pg_restore -d todo -U todo -h localhost -Fc $(BACKUP_FILE)
