@@ -62,6 +62,7 @@ func authRequiredMiddleware(c *gin.Context) {
 	c.Next()
 }
 
+// SetupSessionStore init the session
 func SetupSessionStore() sessions.Store {
 	var store redis.Store
 	redisHost := "localhost"

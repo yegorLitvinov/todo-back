@@ -1,7 +1,6 @@
 package todo
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -12,7 +11,6 @@ import (
 
 func listTodos(c *gin.Context) {
 	user := getUserFromContext(c)
-	fmt.Println(user.ID)
 	var todos []Todo
 	err := db.Where(&Todo{User: user.ID}).Find(&todos).Error
 	if err != nil {
@@ -29,6 +27,7 @@ func createTodo(c *gin.Context) {
 	}
 	user := getUserFromContext(c)
 	todo.User = user.ID
+	todo.Order = user.selectNextTodoOrder()
 	if err := db.Create(&todo).Error; err != nil {
 		panic(err)
 	}
@@ -36,6 +35,7 @@ func createTodo(c *gin.Context) {
 }
 
 func updateTodo(c *gin.Context) {
+	tx := db.Begin()
 	var todo Todo
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil || id < 1 {
@@ -43,21 +43,37 @@ func updateTodo(c *gin.Context) {
 		return
 	}
 	user := getUserFromContext(c)
-	err = db.Where(&Todo{User: user.ID, ID: uint(id)}).First(&todo).Error
+	err = tx.Where(&Todo{User: user.ID, ID: uint(id)}).First(&todo).Error
 	if gorm.IsRecordNotFoundError(err) {
 		c.JSON(http.StatusNotFound, gin.H{"Error": "Not found"})
 		return
 	}
 	if err != nil {
+		tx.Rollback()
 		panic(err)
 	}
+	oldOrder := todo.Order
 	if err := c.BindJSON(&todo); err != nil {
 		c.JSON(http.StatusBadRequest, err)
 		return
 	}
-	if err := db.Save(&todo).Error; err != nil {
+	if oldOrder != todo.Order {
+		// reordering
+		var todos []Todo
+		if err := db.Where(&Todo{User: user.ID}).Find(&todos).Error; err != nil {
+			tx.Rollback()
+			panic(err)
+		}
+		if err := todo.reorder(todos, oldOrder, tx); err != nil {
+			tx.Rollback()
+			panic(err)
+		}
+	}
+	if err := tx.Save(&todo).Error; err != nil {
+		tx.Rollback()
 		panic(err)
 	}
+	tx.Commit()
 	c.JSON(http.StatusOK, todo)
 }
 
@@ -102,6 +118,7 @@ func signup(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"Info": "The user successfully created"})
 }
 
+// SetupAPIRouter init routes and middlewares
 func SetupAPIRouter(store sessions.Store) *gin.Engine {
 	router := gin.Default()
 	sessionMiddleware := sessions.Sessions("x-session", store)
