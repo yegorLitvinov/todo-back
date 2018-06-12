@@ -8,21 +8,32 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/assert"
 )
 
+var testDB *gorm.DB
+var testStore sessions.Store
+var testRouter *gin.Engine
+
 func beforeEach() {
-	if db == nil {
-		SetupDB()
+	if testDB == nil {
+		testDB = SetupDB()
 	}
-	db.Delete(Todo{})
-	db.Delete(User{})
-	db.Delete(Tag{})
+	testDB.Delete(Todo{})
+	testDB.Delete(User{})
+	testDB.Delete(Tag{})
+	if testStore == nil {
+		testStore = SetupSessionStore()
+	}
+	if testRouter == nil {
+		testRouter = SetupAPIRouter(testStore, testDB)
+	}
 }
 
-func performRequest(method, path string, data *interface{}) *httptest.ResponseRecorder {
-	store := SetupSessionStore()
-	r := SetupAPIRouter(store)
+func performRequest(method, path string, data interface{}) *httptest.ResponseRecorder {
 	var reader io.Reader
 	if data == nil {
 		reader = bytes.NewBuffer([]byte{})
@@ -33,15 +44,32 @@ func performRequest(method, path string, data *interface{}) *httptest.ResponseRe
 	req, _ := http.NewRequest(method, path, reader)
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
+	testRouter.ServeHTTP(w, req)
 	return w
 }
 
-func TestListTodo(t *testing.T) {
+func TestLogin(t *testing.T) {
 	beforeEach()
+	var w *httptest.ResponseRecorder
 
-	todo := Todo{Text: "Hello"}
-	db.Create(&todo)
+	user := User{Email: "a@a.com", Password: "1234"}
+	testDB.Create(&user)
+
+	w = performRequest("POST", "/api/v1/auth/login/", user.Credentials())
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	w = performRequest("POST", "/api/v1/auth/login/", gin.H{"email": "a@a.com", "password": "1234"})
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	w = performRequest("POST", "/api/v1/auth/login/", gin.H{"email": "a@a.com", "password": "12345"})
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	w = performRequest("POST", "/api/v1/auth/login/", gin.H{"email": "b@a.com", "password": "1234"})
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestUnautorized(t *testing.T) {
+	beforeEach()
 
 	w := performRequest("GET", "/api/v1/todos/", nil)
 	assert.Equal(t, http.StatusUnauthorized, w.Code)

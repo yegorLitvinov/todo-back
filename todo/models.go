@@ -1,6 +1,7 @@
 package todo
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"time"
@@ -10,8 +11,6 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres" // Need it to use postgres
 )
 
-var db *gorm.DB
-
 // User which uses the app
 type User struct {
 	ID        uint      `gorm:"primary_key" json:"id"`
@@ -19,6 +18,10 @@ type User struct {
 	Email     string    `gorm:"unique;not null" json:"email"`
 	Password  string    `gorm:"not null" json:"-"`
 	Todos     []Todo    `gorm:"foreignkey:User" json:"-"`
+}
+
+func (u *User) Credentials() *Credentials {
+	return &Credentials{Email: u.Email, Password: u.Password}
 }
 
 // Todo item
@@ -42,15 +45,14 @@ type Tag struct {
 }
 
 // SetupDB inits the database connection
-func SetupDB() {
+func SetupDB() *gorm.DB {
 	dbHost := "localhost"
 	logMode := true
 	if gin.Mode() == gin.ReleaseMode {
 		dbHost = "postgres"
 		logMode = false
 	}
-	var err error
-	db, err = gorm.Open(
+	db, err := gorm.Open(
 		"postgres",
 		fmt.Sprintf("host=%s port=5432 user=todo dbname=todo password=password sslmode=disable", dbHost),
 	)
@@ -59,9 +61,32 @@ func SetupDB() {
 	}
 	db.LogMode(logMode)
 	db.AutoMigrate(&User{}, &Tag{}, &Todo{})
+	return db
 }
 
-func (u *User) selectNextTodoOrder() int {
+// DBMiddleware saves db in context
+func DBMiddleware(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set("db", db)
+		c.Next()
+	}
+}
+
+// GetDB get db fom context with errors handling
+func GetDBFromContext(c *gin.Context) *gorm.DB {
+	contextInstance, exists := c.Get("db")
+	if !exists {
+		panic(errors.New("No db in context"))
+	}
+	var ok bool
+	var db *gorm.DB
+	if db, ok = contextInstance.(*gorm.DB); !ok {
+		panic("Can't cast to *gorm.DB")
+	}
+	return db
+}
+
+func selectNextTodoOrder(u *User, db *gorm.DB) int {
 	var order int
 	row := db.Table("todos").Where(&Todo{User: u.ID}).Select("max(\"order\")").Row()
 	if err := row.Scan(&order); err != nil {

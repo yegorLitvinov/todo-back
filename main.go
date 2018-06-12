@@ -5,8 +5,8 @@ import (
 )
 
 func main() {
-	todo.SetupDB()
+	db := todo.SetupDB()
 	store := todo.SetupSessionStore()
-	router := todo.SetupAPIRouter(store)
+	router := todo.SetupAPIRouter(store, db)
 	router.Run(":4000")
 }

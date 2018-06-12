@@ -5,6 +5,7 @@ resetdb:
 	psql -h localhost -U postgres -c "create database todo owner todo"
 
 run:
+	# go get github.com/codegangsta/gin
 	gin --port 3500 --appPort 4000
 
 build:

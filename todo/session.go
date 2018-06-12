@@ -18,6 +18,11 @@ func getSessionUser(c *gin.Context) (User, error) {
 	if !ok {
 		return user, errors.New("Session is empty")
 	}
+	var db *gorm.DB
+	db, ok = session.Get("db").(*gorm.DB)
+	if !ok {
+		return user, errors.New("No database in sessions")
+	}
 	if err := db.First(&user, userID).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return user, errors.New("User not found")

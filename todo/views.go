@@ -12,6 +12,7 @@ import (
 func listTodos(c *gin.Context) {
 	user := getUserFromContext(c)
 	var todos []Todo
+	db := GetDBFromContext(c)
 	err := db.Where(&Todo{User: user.ID}).Find(&todos).Error
 	if err != nil {
 		panic(err)
@@ -27,7 +28,8 @@ func createTodo(c *gin.Context) {
 	}
 	user := getUserFromContext(c)
 	todo.User = user.ID
-	todo.Order = user.selectNextTodoOrder()
+	db := GetDBFromContext(c)
+	todo.Order = selectNextTodoOrder(&user, db)
 	if err := db.Create(&todo).Error; err != nil {
 		panic(err)
 	}
@@ -35,6 +37,7 @@ func createTodo(c *gin.Context) {
 }
 
 func updateTodo(c *gin.Context) {
+	db := GetDBFromContext(c)
 	tx := db.Begin()
 	var todo Todo
 	id, err := strconv.Atoi(c.Param("id"))
@@ -78,6 +81,7 @@ func updateTodo(c *gin.Context) {
 }
 
 func login(c *gin.Context) {
+	db := GetDBFromContext(c)
 	var creds Credentials
 	if err := c.BindJSON(&creds); err != nil {
 		c.JSON(http.StatusBadRequest, err)
@@ -98,6 +102,7 @@ func logout(c *gin.Context) {
 }
 
 func signup(c *gin.Context) {
+	db := GetDBFromContext(c)
 	type CredentialsConfirm struct {
 		Credentials
 		ConfirmPassword string `json:"confirmPassword" binding:"required,eqfield=Credentials.Password"`
@@ -119,10 +124,12 @@ func signup(c *gin.Context) {
 }
 
 // SetupAPIRouter init routes and middlewares
-func SetupAPIRouter(store sessions.Store) *gin.Engine {
+func SetupAPIRouter(store sessions.Store, db *gorm.DB) *gin.Engine {
 	router := gin.Default()
 	sessionMiddleware := sessions.Sessions("x-session", store)
 	router.Use(sessionMiddleware)
+	dbMiddleware := DBMiddleware(db)
+	router.Use(dbMiddleware)
 
 	apiGroup := router.Group("/api/v1/")
 	todoGroup := apiGroup.Group("/todos/", authRequiredMiddleware)
