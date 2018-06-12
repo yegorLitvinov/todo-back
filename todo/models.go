@@ -72,7 +72,7 @@ func DBMiddleware(db *gorm.DB) gin.HandlerFunc {
 	}
 }
 
-// GetDB get db fom context with errors handling
+// GetDBFromContext get db fom context with errors handling
 func GetDBFromContext(c *gin.Context) *gorm.DB {
 	contextInstance, exists := c.Get("db")
 	if !exists {
