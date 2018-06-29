@@ -28,11 +28,13 @@ func createTodo(c *gin.Context) {
 	}
 	user := getUserFromContext(c)
 	todo.User = user.ID
-	db := GetDBFromContext(c)
-	todo.Order = selectNextTodoOrder(&user, db)
-	if err := db.Create(&todo).Error; err != nil {
+	tx := GetDBFromContext(c).Begin()
+	tx.Model(&todo).Update("order", gorm.Expr("order + 1"))
+	todo.Order = 0
+	if err := tx.Create(&todo).Error; err != nil {
 		panic(err)
 	}
+	tx.Commit()
 	c.JSON(http.StatusCreated, todo)
 }
 

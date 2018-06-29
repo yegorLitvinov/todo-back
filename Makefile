@@ -23,7 +23,6 @@ deploy-nginx:
 	ssh $(ROOT_SERVER) 'nginx -t'
 	ssh $(ROOT_SERVER) 'service nginx restart'
 	# certbot certonly -d *.tvgun.ga --server https://acme-v02.api.letsencrypt.org/directory --manual
-	# certbot renew
 
 BACKUP_FILE=backup/todo.dump
 backup:

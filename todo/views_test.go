@@ -22,15 +22,15 @@ func beforeEach() {
 	if testDB == nil {
 		testDB = SetupDB()
 	}
-	testDB.Delete(Todo{})
-	testDB.Delete(User{})
-	testDB.Delete(Tag{})
 	if testStore == nil {
 		testStore = SetupSessionStore()
 	}
 	if testRouter == nil {
 		testRouter = SetupAPIRouter(testStore, testDB)
 	}
+	testDB.Delete(Todo{})
+	testDB.Delete(User{})
+	testDB.Delete(Tag{})
 }
 
 func performRequest(method, path string, data interface{}) *httptest.ResponseRecorder {

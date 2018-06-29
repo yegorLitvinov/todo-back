@@ -10,7 +10,7 @@ services:
     depends_on:
       - postgres
       - redis
-      
+
   postgres:
     image: postgres:alpine
     volumes:
@@ -26,7 +26,7 @@ services:
       todoNetwork:
         ipv4_address: 172.32.111.4
     restart: "always"
-  
+
 networks:
   todoNetwork:
     driver: bridge
