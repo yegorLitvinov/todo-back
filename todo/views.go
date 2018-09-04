@@ -13,7 +13,7 @@ func listTodos(c *gin.Context) {
 	user := getUserFromContext(c)
 	var todos []Todo
 	db := GetDBFromContext(c)
-	err := db.Where(&Todo{User: user.ID}).Find(&todos).Error
+	err := db.Where(&Todo{User: user.ID}).Order("\"order\" desc").Find(&todos).Error
 	if err != nil {
 		panic(err)
 	}
@@ -29,8 +29,10 @@ func createTodo(c *gin.Context) {
 	user := getUserFromContext(c)
 	todo.User = user.ID
 	tx := GetDBFromContext(c).Begin()
-	tx.Model(&todo).Update("order", gorm.Expr("order + 1"))
-	todo.Order = 0
+	var maxOrder int
+	row := tx.Raw("select max(\"order\") from todos where todos.user = ?", user.ID).Row()
+	row.Scan(&maxOrder)
+	todo.Order = maxOrder + 1
 	if err := tx.Create(&todo).Error; err != nil {
 		panic(err)
 	}

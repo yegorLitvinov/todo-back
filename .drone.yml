@@ -12,6 +12,7 @@ pipeline:
       - go get -t ./...
       - GIN_MODE=release go test ./...
       - GOOS=linux go build -ldflags="-s -w"
+
   docker:
     image: plugins/docker
     repo: yegorlitvinov/todo-back

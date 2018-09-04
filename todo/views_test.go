@@ -31,6 +31,7 @@ func beforeEach() {
 	testDB.Delete(Todo{})
 	testDB.Delete(User{})
 	testDB.Delete(Tag{})
+	gin.SetMode(gin.TestMode)
 }
 
 func performRequest(method, path string, data interface{}) *httptest.ResponseRecorder {
@@ -70,6 +71,19 @@ func TestLogin(t *testing.T) {
 
 func TestUnautorized(t *testing.T) {
 	beforeEach()
+
+	w := performRequest("GET", "/api/v1/todos/", nil)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
+
+func TestList(t *testing.T) {
+	beforeEach()
+
+	user1 := User{Email: "a@a.com", Password: "1234"}
+	testDB.Create(&user1)
+
+	user2 := User{Email: "b@b.com", Password: "qwer"}
+	testDB.Create(&user2)
 
 	w := performRequest("GET", "/api/v1/todos/", nil)
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
